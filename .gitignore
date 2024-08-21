@@ -28,3 +28,5 @@ Thumbs.db
 
 ## ignore any tracing files! 
 ls_*
+
+private_readme.md
