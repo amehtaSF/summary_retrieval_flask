@@ -4,6 +4,7 @@ from flask import Flask, request
 import boto3
 import json
 import dotenv
+from boto3.dynamodb.conditions import Key
 import os
 
 dotenv.load_dotenv()
@@ -26,11 +27,15 @@ table = dynamodb.Table('micronarrative_bot')
 
 app = Flask(__name__)
 
+
 def get_summary(prolific_id):
-    response = table.get_item(Key={'prolific_id': prolific_id})
-    item = response.get('Item')
-    if item and 'final_scenario' in item:
-        summary = item['final_scenario']
+    response = table.query(
+        IndexName='prolific_id-index',  
+        KeyConditionExpression=Key('prolific_id').eq(prolific_id)
+    )
+    items = response.get('Items')
+    if items and 'final_scenario' in items[0]: # TODO: not yet handling if there are multiple entries for the same prolific_id
+        summary = items[0]['final_scenario']
     else:
         summary = 'SUMMARY NOT FOUND'
     return summary
