@@ -1,11 +1,12 @@
 
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import boto3
 import json
 import dotenv
 from boto3.dynamodb.conditions import Key
 import os
+from functools import wraps
 
 dotenv.load_dotenv()
 
@@ -28,6 +29,52 @@ table = dynamodb.Table('micronarrative_bot')
 app = Flask(__name__)
 
 
+def api_key_required(f):
+    # auth decorator
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        key = request.headers.get('FLASK-API-KEY')
+        if not key or key != flask_api_key:
+            return "Unauthorized", 401
+        return f(*args, **kwargs)
+    return decorated
+
+
+@app.route('/api/summary', methods=['POST'])
+@api_key_required
+def api_get_summary():
+    prolific_id = request.json.get('prolific_id')
+    summary = get_summary(prolific_id)
+    payload = {
+        'summary': summary
+    }
+    return payload
+
+
+@app.route('/api/get_all', methods=['POST', 'GET'])
+@api_key_required
+def api_get_all():
+    payload = get_all_entries()
+    # payload = f"<pre>{json.dumps(payload, indent=2)}</pre>"
+    return payload
+
+@app.route('/api/get_pid', methods=['POST', 'GET'])
+@api_key_required
+def api_get_pid():
+    prolific_id = request.json.get('prolific_id')
+    response = table.query(
+        IndexName='prolific_id-index',  
+        KeyConditionExpression=Key('prolific_id').eq(prolific_id)
+    )
+    items = response.get('Items')
+    return items
+
+
+@app.route('/')
+def home():
+    return "hello"
+
+
 def get_summary(prolific_id):
     response = table.query(
         IndexName='prolific_id-index',  
@@ -44,33 +91,6 @@ def get_all_entries():
     response = table.scan()
     items = response.get('Items')
     return items
-
-
-@app.route('/api/summary', methods=['POST'])
-def api_get_summary():
-    if request.headers.get('FLASK-API-KEY') != flask_api_key:
-        return "Unauthorized", 401
-    prolific_id = request.json.get('prolific_id')
-    summary = get_summary(prolific_id)
-    payload = {
-        'summary': summary
-    }
-    return payload
-
-
-@app.route('/api/get_all', methods=['POST', 'GET'])
-def api_get_all():
-    if request.headers.get('FLASK-API-KEY') != flask_api_key:
-        return "Unauthorized", 401
-    
-    payload = get_all_entries()
-    # payload = f"<pre>{json.dumps(payload, indent=2)}</pre>"
-    return payload
-
-
-@app.route('/')
-def home():
-    return "hello"
 
 if __name__ == '__main__':
     app.run(debug=False)
