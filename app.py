@@ -24,7 +24,7 @@ dynamodb = boto3.resource(
     region_name=region_name
 )
 
-table = dynamodb.Table('micronarrative_bot')
+table = dynamodb.Table('petr_micronarrative_nov2024')
 
 app = Flask(__name__)
 
