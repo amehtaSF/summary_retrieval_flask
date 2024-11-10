@@ -51,20 +51,19 @@ def api_get_summary():
     return payload
 
 
-@app.route('/api/get_all', methods=['POST', 'GET'])
-@api_key_required
-def api_get_all():
-    payload = get_all_entries()
-    # payload = f"<pre>{json.dumps(payload, indent=2)}</pre>"
-    return payload
+# @app.route('/api/get_all', methods=['POST', 'GET'])
+# @api_key_required
+# def api_get_all():
+#     payload = get_all_entries()
+#     # payload = f"<pre>{json.dumps(payload, indent=2)}</pre>"
+#     return payload
 
 @app.route('/api/get_pid', methods=['POST', 'GET'])
 @api_key_required
 def api_get_pid():
     prolific_id = request.json.get('prolific_id')
     response = table.query(
-        IndexName='prolific_id-index',  
-        KeyConditionExpression=Key('prolific_id').eq(prolific_id)
+        KeyConditionExpression=Key('chat_id').eq(prolific_id)
     )
     items = response.get('Items')
     return items
@@ -77,20 +76,19 @@ def home():
 
 def get_summary(prolific_id):
     response = table.query(
-        IndexName='prolific_id-index',  
-        KeyConditionExpression=Key('prolific_id').eq(prolific_id)
+        KeyConditionExpression=Key('chat_id').eq(prolific_id)
     )
     items = response.get('Items')
-    if items and 'final_scenario' in items[0]: # TODO: not yet handling if there are multiple entries for the same prolific_id
-        summary = items[0]['final_scenario']
+    if items and 'scenario' in items[-1]: # TODO: not yet handling if there are multiple entries for the same prolific_id
+        summary = items[-1]['scenario']
     else:
         summary = 'SUMMARY NOT FOUND'
     return summary
 
-def get_all_entries():
-    response = table.scan()
-    items = response.get('Items')
-    return items
+# def get_all_entries():
+#     response = table.scan()
+#     items = response.get('Items')
+#     return items
 
 if __name__ == '__main__':
     app.run(debug=False)
