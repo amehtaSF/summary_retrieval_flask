@@ -11,7 +11,7 @@ COPY . .
 
 COPY .env .env
 
-EXPOSE 8000
+EXPOSE 80
 
 CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:80", "app:app"]
 
